@@ -50,7 +50,7 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 w-full sm:w-auto';
   
   const variantClasses = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 disabled:bg-primary-300',
@@ -59,9 +59,9 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg'
+    sm: 'px-3 py-2 text-sm min-h-[40px]',
+    md: 'px-4 py-3 text-base min-h-[44px] sm:px-6 sm:py-2',
+    lg: 'px-6 py-4 text-lg min-h-[48px] sm:px-8 sm:py-3'
   };
 
   const isDisabled = disabled || isLoading;

@@ -186,7 +186,7 @@ const ClientPortal: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Building2 className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Company Information</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Company Information</h2>
               <p className="text-gray-600 mt-2">Tell us about your organization</p>
             </div>
 
@@ -230,7 +230,7 @@ const ClientPortal: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <FileText className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Project Details</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Project Details</h2>
               <p className="text-gray-600 mt-2">Describe your sustainability project</p>
             </div>
 
@@ -277,7 +277,7 @@ const ClientPortal: React.FC = () => {
                 <Clock className="w-12 h-12 text-primary-600" />
                 <DollarSign className="w-12 h-12 text-primary-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Timeline & Budget</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Timeline & Budget</h2>
               <p className="text-gray-600 mt-2">Help us plan your project scope</p>
             </div>
 
@@ -345,7 +345,7 @@ const ClientPortal: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <FileText className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Supporting Documents</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Supporting Documents</h2>
               <p className="text-gray-600 mt-2">Upload any relevant files (optional)</p>
             </div>
 
@@ -379,12 +379,12 @@ const ClientPortal: React.FC = () => {
     <div className="max-w-2xl mx-auto">
       <div className="card">
         {/* Progress indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             {[1, 2, 3, 4].map((step) => (
               <div
                 key={step}
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-medium ${
                   step <= currentStep
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-200 text-gray-600'
@@ -405,17 +405,17 @@ const ClientPortal: React.FC = () => {
         {renderStep()}
 
         {/* Navigation buttons */}
-        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between mt-8 pt-6 border-t border-gray-200">
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed order-2 sm:order-1"
           >
             Previous
           </button>
 
           {currentStep < 4 ? (
-            <button onClick={nextStep} className="btn-primary">
+            <button onClick={nextStep} className="btn-primary order-1 sm:order-2">
               Next Step
             </button>
           ) : (
@@ -425,10 +425,12 @@ const ClientPortal: React.FC = () => {
               loadingText="Submitting Project..."
               variant="primary"
               size="md"
-              className="flex items-center space-x-2"
+              className="order-1 sm:order-2"
             >
-              <Send className="w-4 h-4" />
-              <span>Submit Project</span>
+              <div className="flex items-center justify-center space-x-2">
+                <Send className="w-4 h-4" />
+                <span>Submit Project</span>
+              </div>
             </LoadingButton>
           )}
         </div>
