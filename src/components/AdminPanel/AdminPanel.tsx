@@ -11,7 +11,9 @@ import {
   FileText,
   Users,
   BarChart3,
-  Mail
+  Mail,
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { ProjectSubmission, ProjectStatus } from '../../types';
 import { 
@@ -24,10 +26,18 @@ import {
 import { mockProjects, projectStatuses } from '../../data/mockData';
 import usePageTitle from '../../hooks/usePageTitle';
 import { AdminStatsSkeleton, ProjectListSkeleton } from '../UI/Skeleton';
+import useSupabase from '../../hooks/useSupabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminPanel: React.FC = () => {
   // Set dynamic page title
   usePageTitle('Admin Dashboard', 'Manage Client Projects & Communications');
+  
+  // Authentication
+  const { user, logout } = useAuth();
+  
+  // Database hook
+  const { projects: projectsHook } = useSupabase();
   
   const [projects, setProjects] = useState<ProjectSubmission[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectSubmission[]>([]);
@@ -41,20 +51,69 @@ const AdminPanel: React.FC = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
+      console.log('👨‍💼 AdminPanel: Loading projects from database...');
       setIsLoading(true);
-      // Simulate loading delay for better UX demo
-      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Load projects from localStorage and combine with mock data
-      const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
-      const allProjects = [...mockProjects, ...savedProjects];
-      setProjects(allProjects);
-      setFilteredProjects(allProjects);
-      setIsLoading(false);
+      try {
+        // Load projects from database
+        const dbProjects = await projectsHook.getAll();
+        console.log('👨‍💼 AdminPanel: Loaded', dbProjects?.length || 0, 'projects from database');
+        
+        if (Array.isArray(dbProjects)) {
+          // Convert database format to UI format
+          const convertedProjects: ProjectSubmission[] = dbProjects.map(dbProject => ({
+            id: dbProject.id,
+            companyName: dbProject.company_name,
+            contactEmail: dbProject.contact_email,
+            contactPhone: dbProject.contact_phone || undefined,
+            projectType: dbProject.project_type as any,
+            description: dbProject.description,
+            timeline: dbProject.timeline,
+            budgetRange: dbProject.budget_range as any,
+            files: [], // TODO: Handle files properly
+            status: dbProject.status as any,
+            adminNotes: dbProject.admin_notes || undefined,
+            submittedAt: new Date(dbProject.created_at),
+            lastUpdated: new Date(dbProject.updated_at)
+          }));
+
+          // Also load from localStorage for backward compatibility
+          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+          
+          // Combine database projects with localStorage projects (avoiding duplicates)
+          const allProjects = [...convertedProjects];
+          savedProjects.forEach(savedProject => {
+            if (!allProjects.find(p => p.id === savedProject.id)) {
+              allProjects.push(savedProject);
+            }
+          });
+
+          console.log('👨‍💼 AdminPanel: Total projects:', allProjects.length);
+          setProjects(allProjects);
+          setFilteredProjects(allProjects);
+        } else {
+          console.error('👨‍💼 AdminPanel: Expected array but got:', typeof dbProjects);
+          // Fallback to localStorage and mock data
+          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+          const fallbackProjects = [...mockProjects, ...savedProjects];
+          setProjects(fallbackProjects);
+          setFilteredProjects(fallbackProjects);
+        }
+      } catch (error) {
+        console.error('👨‍💼 AdminPanel: Error loading projects:', error);
+        toast.error('Failed to load projects from database. Using local data.');
+        // Fallback to localStorage and mock data
+        const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+        const fallbackProjects = [...mockProjects, ...savedProjects];
+        setProjects(fallbackProjects);
+        setFilteredProjects(fallbackProjects);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadProjects();
-  }, []);
+  }, []); // Remove the problematic dependencies that cause infinite loop
 
   useEffect(() => {
     let filtered = projects;
@@ -98,8 +157,6 @@ const AdminPanel: React.FC = () => {
         console.log('📧 Email notification sent to:', project.contactEmail);
         console.log('📧 Status change notification:', notification.message);
         
-        toast.success(`Project status updated to ${newStatus}`);
-        
         return updatedProject;
       }
       return project;
@@ -112,16 +169,100 @@ const AdminPanel: React.FC = () => {
     saveToLocalStorage('projectSubmissions', savedProjects);
   };
 
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = async () => {
     if (selectedProject) {
-      updateProjectStatus(selectedProject.id, editingStatus, adminNotes);
-      setSelectedProject({
-        ...selectedProject,
-        status: editingStatus,
-        adminNotes: adminNotes,
-        lastUpdated: new Date()
-      });
-      setIsEditing(false);
+      try {
+        console.log('🔄 Updating project status and notes...');
+        
+        // Try to update with admin_notes first
+        let updatedProject;
+        try {
+          console.log('🔄 Attempting to update with admin_notes...');
+          updatedProject = await projectsHook.update(selectedProject.id, {
+            status: editingStatus,
+            admin_notes: adminNotes || null
+          });
+        } catch (firstError) {
+          console.log('⚠️ Failed to update with admin_notes, trying status only...', firstError);
+          
+          // Fallback: Update only status (for when admin_notes column doesn't exist)
+          try {
+            updatedProject = await projectsHook.update(selectedProject.id, {
+              status: editingStatus
+            });
+            console.log('✅ Successfully updated status only');
+          } catch (secondError) {
+            throw new Error(`Failed to update project: ${secondError instanceof Error ? secondError.message : 'Unknown error'}`);
+          }
+        }
+
+        if (updatedProject) {
+          console.log('✅ Project updated in database successfully');
+          
+          // Update local state with database response
+          const updatedProjectUI = {
+            ...selectedProject,
+            status: editingStatus as any,
+            adminNotes: adminNotes,
+            lastUpdated: new Date()
+          };
+          
+          setSelectedProject(updatedProjectUI);
+          
+          // Update projects list
+          setProjects(prevProjects => 
+            prevProjects.map(p => 
+              p.id === selectedProject.id 
+                ? updatedProjectUI
+                : p
+            )
+          );
+          
+          // Also update localStorage for backward compatibility (without triggering toast)
+          const updatedProjects = projects.map(project => {
+            if (project.id === selectedProject.id) {
+              return {
+                ...project,
+                status: editingStatus,
+                lastUpdated: new Date(),
+                adminNotes: adminNotes || project.adminNotes
+              };
+            }
+            return project;
+          });
+          
+          // Save to localStorage without the toast notification
+          const savedProjects = updatedProjects.filter(p => !mockProjects.some(mp => mp.id === p.id));
+          saveToLocalStorage('projectSubmissions', savedProjects);
+          
+          // Create notification for logging
+          const notification = createNotification(
+            'status_change',
+            selectedProject.id,
+            `Project status updated to ${editingStatus} for ${selectedProject.companyName}`
+          );
+          console.log('📧 Email notification sent to:', selectedProject.contactEmail);
+          console.log('📧 Status change notification:', notification.message);
+          
+          toast.success(`Project status updated to "${editingStatus}"`);
+          setIsEditing(false);
+        } else {
+          throw new Error('Failed to update project in database');
+        }
+      } catch (error) {
+        console.error('❌ Error updating project:', error);
+        toast.error('Failed to update project. Please try again.');
+        
+        // Fallback to localStorage update
+        updateProjectStatus(selectedProject.id, editingStatus, adminNotes);
+        setSelectedProject({
+          ...selectedProject,
+          status: editingStatus as any,
+          adminNotes: adminNotes,
+          lastUpdated: new Date()
+        });
+        setIsEditing(false);
+      }
     }
   };
 
@@ -157,24 +298,28 @@ const AdminPanel: React.FC = () => {
   if (selectedProject) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        {/* Header Navigation - Fully Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Back Button */}
           <button
             onClick={() => {
               setSelectedProject(null);
               setIsEditing(false);
             }}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1 text-sm sm:text-base"
           >
-            ← Back to Dashboard
+            <span>← Back to Dashboard</span>
           </button>
           
-          <div className="flex items-center space-x-3">
+          {/* Action Buttons - Stack on mobile, inline on tablet+ */}
+          <div className="flex flex-col xs:flex-row gap-2 xs:gap-3">
             <button
               onClick={() => sendTestNotification(selectedProject)}
-              className="btn-secondary flex items-center space-x-2"
+              className="btn-secondary flex items-center justify-center space-x-2 w-full xs:w-auto text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5"
             >
               <Mail className="w-4 h-4" />
-              <span>Send Notification</span>
+              <span className="hidden xs:inline">Send Notification</span>
+              <span className="xs:hidden">Notify</span>
             </button>
             
             <button
@@ -183,38 +328,42 @@ const AdminPanel: React.FC = () => {
                 setEditingStatus(selectedProject.status);
                 setAdminNotes(selectedProject.adminNotes || '');
               }}
-              className="btn-primary flex items-center space-x-2"
+              className="btn-primary flex items-center justify-center space-x-2 w-full xs:w-auto text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5"
             >
               <Edit className="w-4 h-4" />
-              <span>{isEditing ? 'Cancel Edit' : 'Edit Project'}</span>
+              <span className="hidden xs:inline">{isEditing ? 'Cancel Edit' : 'Edit Project'}</span>
+              <span className="xs:hidden">{isEditing ? 'Cancel' : 'Edit'}</span>
             </button>
           </div>
         </div>
 
         <div className="card">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{selectedProject.companyName}</h1>
-              <p className="text-gray-600">ID: {selectedProject.id}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 pb-4 mb-6">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{selectedProject.companyName}</h1>
+              <p className="text-sm sm:text-base text-gray-600 truncate">ID: {selectedProject.id}</p>
             </div>
             
             {isEditing ? (
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <select
                   value={editingStatus}
                   onChange={(e) => setEditingStatus(e.target.value as ProjectStatus)}
-                  className="input-field w-48"
+                  className="input-field w-full sm:w-48 text-sm sm:text-base"
                 >
                   {projectStatuses.map(status => (
                     <option key={status} value={status}>{status}</option>
                   ))}
                 </select>
-                <button onClick={handleStatusUpdate} className="btn-primary">
-                  Update
+                <button 
+                  onClick={handleStatusUpdate} 
+                  className="btn-primary w-full sm:w-auto px-4 py-2 text-sm sm:text-base whitespace-nowrap"
+                >
+                  Update Project
                 </button>
               </div>
             ) : (
-              <div className={`status-badge ${getStatusColor(selectedProject.status)} text-base px-4 py-2`}>
+              <div className={`status-badge ${getStatusColor(selectedProject.status)} text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2 w-full sm:w-auto justify-center sm:justify-start`}>
                 {getStatusIcon(selectedProject.status)}
                 <span className="ml-2">{selectedProject.status}</span>
               </div>
@@ -270,7 +419,11 @@ const AdminPanel: React.FC = () => {
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-3">Project Description</h3>
-            <p className="text-gray-700 leading-relaxed">{selectedProject.description}</p>
+            <div className="bg-gray-50 border rounded-lg p-4">
+              <p className="text-gray-700 leading-relaxed break-words hyphens-auto whitespace-pre-wrap text-content">
+                {selectedProject.description || 'No description provided.'}
+              </p>
+            </div>
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
@@ -285,7 +438,7 @@ const AdminPanel: React.FC = () => {
               />
             ) : (
               <div className="bg-gray-50 border rounded-lg p-4">
-                <p className="text-gray-700">
+                <p className="text-gray-700 break-words hyphens-auto whitespace-pre-wrap text-content">
                   {selectedProject.adminNotes || 'No admin notes yet.'}
                 </p>
               </div>
@@ -296,129 +449,271 @@ const AdminPanel: React.FC = () => {
     );
   }
 
+  const handleLogout = () => {
+    toast.success('Logged out successfully');
+    logout();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage client project submissions and track progress</p>
+      {/* Modern Admin Header */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Top Section - Admin Info Bar */}
+        <div className="bg-gradient-to-r from-primary-600 to-blue-600 px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            {/* Admin Badge */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Shield className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-white">
+                <div className="text-sm font-medium">{user?.username || 'Admin'}</div>
+                <div className="text-xs text-white/80">{user?.email}</div>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-3 py-1.5 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title="Logout from admin dashboard"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Header Content */}
+        <div className="px-4 sm:px-6 py-6">
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600 text-sm sm:text-base">Manage client project submissions and track progress</p>
+          </div>
+        </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Modern Stats Cards */}
       {isLoading ? (
         <AdminStatsSkeleton />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="card text-center">
-            <Users className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{projects.length}</div>
-            <div className="text-sm text-gray-600">Total Projects</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Total Projects Card */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
+              </div>
+              <div className="text-right">
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{projects.length}</div>
+                <div className="text-xs sm:text-sm text-gray-500 font-medium">Total</div>
+              </div>
+            </div>
+            <div className="text-sm sm:text-base font-medium text-gray-700">Total Projects</div>
           </div>
           
-          {getStatusStats().slice(0, 3).map(({ status, count }) => (
-            <div key={status} className="card text-center">
-              {getStatusIcon(status)}
-              <div className="text-2xl font-bold text-gray-900 mt-2">{count}</div>
-              <div className="text-sm text-gray-600">{status}</div>
-            </div>
-          ))}
+          {getStatusStats().slice(0, 3).map(({ status, count }, index) => {
+            const colors = [
+              { bg: 'bg-blue-100', text: 'text-blue-600', icon: 'text-blue-600' },
+              { bg: 'bg-amber-100', text: 'text-amber-600', icon: 'text-amber-600' },
+              { bg: 'bg-green-100', text: 'text-green-600', icon: 'text-green-600' }
+            ];
+            const colorScheme = colors[index] || colors[0];
+            
+            return (
+              <div key={status} className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 ${colorScheme.bg} rounded-lg flex items-center justify-center`}>
+                    <div className={`${colorScheme.icon} [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-6 sm:[&>svg]:h-6`}>
+                      {getStatusIcon(status)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">{count}</div>
+                    <div className="text-xs sm:text-sm text-gray-500 font-medium">Projects</div>
+                  </div>
+                </div>
+                <div className="text-sm sm:text-base font-medium text-gray-700">{status}</div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="card">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-          <div className="relative flex-1 md:max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search projects..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
-            />
+      {/* Modern Search and Filter Section */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search by company, email, or project ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-all duration-200"
+              />
+            </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Filter className="w-5 h-5 text-gray-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
-              className="input-field w-48"
-            >
-              <option value="all">All Statuses</option>
-              {projectStatuses.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
+          {/* Filter Dropdown */}
+          <div className="sm:w-64">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
+                className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-all duration-200 appearance-none cursor-pointer"
+              >
+                <option value="all">All Statuses</option>
+                {projectStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Results Summary */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">
+              Showing <span className="font-medium text-gray-900">{filteredProjects.length}</span> of <span className="font-medium text-gray-900">{projects.length}</span> projects
+            </span>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Projects Table */}
-      <div className="card p-0">
-        <div className="table-container">
-          <table className="table">
-            <thead className="table-header">
-              <tr>
-                <th className="table-header-cell">Company</th>
-                <th className="table-header-cell">Project Type</th>
-                <th className="table-header-cell">Status</th>
-                <th className="table-header-cell">Submitted</th>
-                <th className="table-header-cell">Budget</th>
-                <th className="table-header-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="p-0">
-                    <ProjectListSkeleton count={4} />
-                  </td>
-                </tr>
-              ) : (
-                filteredProjects.map((project) => (
-                <tr key={project.id} className="table-row">
-                  <td className="table-cell max-w-sm">
-                    <div className="min-w-0">
-                      <div className="font-medium text-gray-900 line-clamp-2 leading-tight" title={project.companyName}>
-                        {project.companyName}
+      {/* Modern Projects Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {isLoading ? (
+          <ProjectListSkeleton count={4} />
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Project Type</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Budget</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredProjects.map((project) => (
+                      <tr key={project.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-900 truncate" title={project.companyName}>
+                              {project.companyName}
+                            </div>
+                            <div className="text-sm text-gray-500 truncate mt-1" title={project.contactEmail}>
+                              {project.contactEmail}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">{project.projectType}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                            {project.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">
+                            {formatDate(project.submittedAt).split(',')[0]}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">{project.budgetRange}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => setSelectedProject(project)}
+                            className="inline-flex items-center p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View - Optimized for Touch */}
+            <div className="lg:hidden divide-y divide-gray-100">
+              {filteredProjects.map((project) => (
+                <div key={project.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                  <div className="space-y-4">
+                    {/* Header with company name and action button */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">{project.companyName}</h3>
+                        <p className="text-sm text-gray-500 truncate mt-1">{project.contactEmail}</p>
                       </div>
-                      <div className="text-sm text-gray-500 truncate mt-1" title={project.contactEmail}>
-                        {project.contactEmail}
+                      
+                      <button
+                        onClick={() => setSelectedProject(project)}
+                        className="ml-4 p-3 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors flex-shrink-0 touch-manipulation"
+                        title="View Details"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    {/* Project details in a more readable layout */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="space-y-1">
+                        <span className="text-gray-500 text-xs uppercase tracking-wide">Project Type</span>
+                        <div className="font-medium text-gray-900">{project.projectType}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-gray-500 text-xs uppercase tracking-wide">Budget</span>
+                        <div className="font-medium text-gray-900">{project.budgetRange}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="table-cell whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{project.projectType}</span>
-                  </td>
-                  <td className="table-cell whitespace-nowrap">
-                    <span className={`status-badge ${getStatusColor(project.status)}`}>
-                      {project.status}
-                    </span>
-                  </td>
-                  <td className="table-cell whitespace-nowrap">
-                    <span className="text-sm text-gray-900">
-                      {formatDate(project.submittedAt).split(',')[0]}
-                    </span>
-                  </td>
-                  <td className="table-cell">
-                    <span className="text-sm text-gray-900">{project.budgetRange}</span>
-                  </td>
-                  <td className="table-cell">
-                    <button
-                      onClick={() => setSelectedProject(project)}
-                      className="text-primary-600 hover:text-primary-700 p-1"
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    
+                    {/* Status and date in bottom row */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
+                        {project.status}
+                      </span>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Submitted</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatDate(project.submittedAt).split(',')[0]}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {filteredProjects.length === 0 && (
           <div className="text-center py-12">

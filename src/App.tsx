@@ -8,15 +8,25 @@ import HomePage from './pages/HomePage';
 import ClientPortal from './components/ClientPortal/ClientPortal';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import StatusTracker from './components/StatusTracker/StatusTracker';
+import AdminLogin from './components/AdminLogin/AdminLogin';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import BackToTop from './components/UI/BackToTop';
+
+// Authentication Context
+import { AuthProvider } from './contexts/AuthContext';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isAdminLogin = location.pathname === '/admin/login';
 
   if (isHomePage) {
     return <HomePage />;
+  }
+
+  if (isAdminLogin) {
+    return <AdminLogin />;
   }
 
   return <PortalLayout />;
@@ -176,7 +186,14 @@ const PortalLayout: React.FC = () => {
             <Routes>
               <Route path="/client" element={<ClientPortal />} />
               <Route path="/track" element={<StatusTracker />} />
-              <Route path="/admin" element={<AdminPanel />} />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="*" element={<Navigate to="/client" replace />} />
             </Routes>
           </main>
@@ -188,28 +205,30 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <Router>
-        <AppContent />
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#10b981',
-              color: '#ffffff',
-            },
-            success: {
+        <AuthProvider>
+          <AppContent />
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
               style: {
                 background: '#10b981',
+                color: '#ffffff',
               },
-            },
-            error: {
-              style: {
-                background: '#ef4444',
+              success: {
+                style: {
+                  background: '#10b981',
+                },
               },
-            },
-          }}
-        />
-        <BackToTop />
+              error: {
+                style: {
+                  background: '#ef4444',
+                },
+              },
+            }}
+          />
+          <BackToTop />
+        </AuthProvider>
       </Router>
     </ErrorBoundary>
   );

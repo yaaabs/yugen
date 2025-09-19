@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, Sparkles } from 'lucide-react';
+import { CheckCircle, Sparkles, X } from 'lucide-react';
 
 interface SuccessAnimationProps {
   show: boolean;
   title?: string;
   message?: string;
   onComplete?: () => void;
+  onClose?: () => void;
   duration?: number;
+  showCloseButton?: boolean;
+  autoCloseDelay?: number;
 }
 
 export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
@@ -14,7 +17,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   title = 'Success!',
   message = 'Your submission has been completed successfully.',
   onComplete,
-  duration = 3000
+  onClose,
+  duration = 3000,
+  showCloseButton = false,
+  autoCloseDelay
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -24,17 +30,28 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setIsVisible(true);
       setTimeout(() => setIsAnimating(true), 50);
       
+      // Use autoCloseDelay if provided, otherwise use duration
+      const closeDelay = autoCloseDelay || duration;
+      
       const timer = setTimeout(() => {
         setIsAnimating(false);
         setTimeout(() => {
           setIsVisible(false);
           onComplete?.();
         }, 300);
-      }, duration);
+      }, closeDelay);
 
       return () => clearTimeout(timer);
     }
-  }, [show, duration, onComplete]);
+  }, [show, duration, autoCloseDelay, onComplete]);
+
+  const handleClose = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.();
+    }, 300);
+  };
 
   if (!isVisible) return null;
 
@@ -42,9 +59,20 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ${
       isAnimating ? 'opacity-100' : 'opacity-0'
     }`}>
-      <div className={`bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center transform transition-all duration-500 ${
+      <div className={`bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center transform transition-all duration-500 relative ${
         isAnimating ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
       }`}>
+        {/* Close Button */}
+        {showCloseButton && (
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+        
         {/* Success Icon with Animation */}
         <div className="relative mb-6">
           <div className={`mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center transform transition-all duration-700 ${

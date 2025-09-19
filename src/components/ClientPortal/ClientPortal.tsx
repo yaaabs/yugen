@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Send, FileText, Clock, DollarSign, Building2 } from 'lucide-react';
 import { FormData, FormErrors, ProjectSubmission, FileAttachment } from '../../types';
-import { validateForm, generateId, saveToLocalStorage, getFromLocalStorage, getBudgetRanges, Currency } from '../../utils/helpers';
+import { validateForm, saveToLocalStorage, getFromLocalStorage, getBudgetRanges, Currency } from '../../utils/helpers';
 import { projectTypes } from '../../data/mockData';
 import FileUpload from '../FileUpload/FileUpload';
 import usePageTitle from '../../hooks/usePageTitle';
@@ -10,10 +10,16 @@ import useFieldValidation from '../../hooks/useFieldValidation';
 import { LoadingButton } from '../UI/LoadingSpinner';
 import { SuccessAnimation, FloatingSuccess } from '../UI/SuccessAnimation';
 import { ValidatedInput, ValidatedTextarea } from '../UI/ValidationMessage';
+import useSupabase from '../../hooks/useSupabase';
+import { useNavigate } from 'react-router-dom';
 
 const ClientPortal: React.FC = () => {
   // Set dynamic page title
   usePageTitle('Submit Project', 'Start Your Sustainability Journey');
+  
+  // Navigation and database hooks
+  const navigate = useNavigate();
+  const { projects: projectsHook, error: dbError } = useSupabase();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [currency, setCurrency] = useState<Currency>('PHP'); // Default to PHP
@@ -112,6 +118,25 @@ const ClientPortal: React.FC = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const handleSuccessClose = () => {
+    setFormData({
+      companyName: '',
+      contactEmail: '',
+      contactPhone: '',
+      projectType: '',
+      description: '',
+      timeline: '',
+      budgetRange: '',
+      files: []
+    });
+    setCurrentStep(1);
+    setShowSuccessAnimation(false);
+    
+    // Redirect to track page immediately when user closes manually
+    console.log('🔄 User closed success animation, redirecting to track page...');
+    navigate('/track');
+  };
+
   const handleSubmit = async () => {
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -124,11 +149,35 @@ const ClientPortal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🚀 Submitting project to database...');
 
+      // Create project data for database (using snake_case fields)
+      const projectData = {
+        company_name: formData.companyName.trim(),
+        contact_email: formData.contactEmail.trim(),
+        contact_phone: formData.contactPhone?.trim() || null,
+        project_type: formData.projectType,
+        description: formData.description.trim(),
+        timeline: formData.timeline,
+        budget_range: formData.budgetRange,
+        status: 'Submitted'
+      };
+
+      console.log('📋 Project data being sent:', projectData);
+
+      // Save to database
+      const savedProject = await projectsHook.create(projectData);
+      
+      if (!savedProject) {
+        console.error('❌ Failed to save project. Database error:', dbError);
+        throw new Error(dbError || 'Failed to save project to database');
+      }
+
+      console.log('✅ Project saved successfully:', savedProject.id);
+
+      // Also save to localStorage as backup (for backward compatibility)
       const submission: ProjectSubmission = {
-        id: generateId(),
+        id: savedProject.id,
         companyName: formData.companyName,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,
@@ -138,11 +187,10 @@ const ClientPortal: React.FC = () => {
         budgetRange: formData.budgetRange as any,
         files: formData.files,
         status: 'Submitted',
-        submittedAt: new Date(),
-        lastUpdated: new Date()
+        submittedAt: new Date(savedProject.created_at),
+        lastUpdated: new Date(savedProject.updated_at)
       };
-
-      // Save to localStorage (simulating database)
+      
       const existingSubmissions = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
       saveToLocalStorage('projectSubmissions', [...existingSubmissions, submission]);
 
@@ -155,7 +203,7 @@ const ClientPortal: React.FC = () => {
       console.log('📧 Email notification sent to:', formData.contactEmail);
       console.log('📧 Internal notification: New project submission from', formData.companyName);
 
-      // Reset form after animation
+      // Reset form and redirect to track page after animation (longer duration for better readability)
       setTimeout(() => {
         setFormData({
           companyName: '',
@@ -169,11 +217,23 @@ const ClientPortal: React.FC = () => {
         });
         setCurrentStep(1);
         setShowSuccessAnimation(false);
-      }, 3500);
+        
+        // Redirect to track page
+        console.log('🔄 Redirecting to track page...');
+        navigate('/track');
+      }, 7000); // Extended to 7 seconds for comfortable reading
 
     } catch (error) {
-      toast.error('There was an error submitting your project. Please try again.');
-      console.error('Submission error:', error);
+      console.error('❌ Submission error details:', error);
+      console.error('❌ Form data at time of error:', formData);
+      console.error('❌ Database error:', dbError);
+      
+      // Show more specific error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to submit project: ${errorMessage}`);
+      
+      // Reset to step 1 so user can try again
+      setCurrentStep(1);
     } finally {
       setIsSubmitting(false);
     }
@@ -440,8 +500,11 @@ const ClientPortal: React.FC = () => {
       <SuccessAnimation
         show={showSuccessAnimation}
         title="Project Submitted Successfully! 🎉"
-        message="Thank you for choosing Drink PH! We'll review your project and get back to you within 24 hours with next steps."
-        onComplete={() => setShowSuccessAnimation(false)}
+        message="Thank you for choosing Drink PH! We'll review your project and get back to you within 24 hours with next steps. You'll be redirected to the tracking page shortly, or you can close this message to continue immediately."
+        onComplete={handleSuccessClose}
+        onClose={handleSuccessClose}
+        showCloseButton={true}
+        autoCloseDelay={7000}
       />
 
       {/* Auto-save Success Notification */}

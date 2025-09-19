@@ -5,10 +5,14 @@ import { getFromLocalStorage, formatDate, getStatusColor, getStatusProgress } fr
 import { mockProjects } from '../../data/mockData';
 import usePageTitle from '../../hooks/usePageTitle';
 import { ProjectListSkeleton } from '../UI/Skeleton';
+import useSupabase from '../../hooks/useSupabase';
 
 const StatusTracker: React.FC = () => {
   // Set dynamic page title
   usePageTitle('Track Project', 'Monitor Your Project Progress');
+  
+  // Database hook
+  const { projects: projectsHook } = useSupabase();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [projects, setProjects] = useState<ProjectSubmission[]>([]);
@@ -17,19 +21,65 @@ const StatusTracker: React.FC = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
+      console.log('🔍 StatusTracker: Loading projects from database...');
       setIsLoading(true);
-      // Simulate loading delay for better UX demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Load projects from localStorage and combine with mock data
-      const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
-      const allProjects = [...mockProjects, ...savedProjects];
-      setProjects(allProjects);
-      setIsLoading(false);
+      try {
+        // Load projects from database
+        const dbProjects = await projectsHook.getAll();
+        console.log('🔍 StatusTracker: Loaded', dbProjects?.length || 0, 'projects from database');
+        
+        if (Array.isArray(dbProjects)) {
+          // Convert database format to UI format
+          const convertedProjects: ProjectSubmission[] = dbProjects.map(dbProject => ({
+            id: dbProject.id,
+            companyName: dbProject.company_name,
+            contactEmail: dbProject.contact_email,
+            contactPhone: dbProject.contact_phone || undefined,
+            projectType: dbProject.project_type as any,
+            description: dbProject.description,
+            timeline: dbProject.timeline,
+            budgetRange: dbProject.budget_range as any,
+            files: [], // TODO: Handle files properly
+            status: dbProject.status as any,
+            adminNotes: dbProject.admin_notes || undefined,
+            submittedAt: new Date(dbProject.created_at),
+            lastUpdated: new Date(dbProject.updated_at)
+          }));
+
+          // Also load from localStorage for backward compatibility
+          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+          
+          // Combine database projects with localStorage projects (avoiding duplicates)
+          const allProjects = [...convertedProjects];
+          savedProjects.forEach(savedProject => {
+            if (!allProjects.find(p => p.id === savedProject.id)) {
+              allProjects.push(savedProject);
+            }
+          });
+
+          console.log('🔍 StatusTracker: Total projects:', allProjects.length);
+          setProjects(allProjects);
+        } else {
+          console.error('🔍 StatusTracker: Expected array but got:', typeof dbProjects);
+          // Fallback to localStorage and mock data
+          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+          const fallbackProjects = [...mockProjects, ...savedProjects];
+          setProjects(fallbackProjects);
+        }
+      } catch (error) {
+        console.error('🔍 StatusTracker: Error loading projects:', error);
+        // Fallback to localStorage and mock data
+        const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
+        const fallbackProjects = [...mockProjects, ...savedProjects];
+        setProjects(fallbackProjects);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadProjects();
-  }, []);
+  }, []); // Remove the problematic dependencies that cause infinite loop
 
   const filteredProjects = projects.filter(project =>
     project.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||

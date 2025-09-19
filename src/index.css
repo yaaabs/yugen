@@ -98,7 +98,7 @@ html {
 /* Mobile-optimized status badge and typography */
 @media (max-width: 640px) {
   .status-badge {
-    @apply text-xs px-2 py-1;
+    @apply text-xs px-2 py-1 flex items-center;
   }
   
   /* Enhanced mobile typography */
@@ -114,11 +114,21 @@ html {
     @apply text-sm font-medium leading-tight;
   }
   
-  /* Touch-friendly button sizing */
+  /* Better text handling for long content */
+  .text-content {
+    @apply break-words hyphens-auto;
+    overflow-wrap: anywhere;
+  }
+  
+  .text-container {
+    @apply break-words overflow-hidden;
+  }
+  
+  /* Touch-friendly button sizing - Mobile First */
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    @apply py-3 px-4 text-sm min-h-[44px];
+    @apply py-3 px-4 text-sm min-h-[44px] touch-manipulation flex items-center justify-center;
   }
   
   /* Better mobile input fields */
@@ -238,9 +248,30 @@ html {
     @apply mb-4;
   }
   
+  /* Mobile-optimized buttons with better spacing */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply w-full py-3.5 px-4 text-base min-h-[48px] rounded-lg;
+  }
+  
+  /* Mobile status badges */
+  .status-badge {
+    @apply text-sm px-3 py-2 rounded-lg;
+  }
+  
   /* Mobile-optimized animations */
   .fade-in {
     animation: mobileSlideIn 0.2s ease-out;
+  }
+}
+
+/* Tablet responsive utilities */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply py-2.5 px-4 text-sm min-h-[44px];
   }
 }
 

@@ -60,9 +60,8 @@ export const validateForm = (data: FormData): FormErrors => {
     errors.contactEmail = 'Please enter a valid email address';
   }
 
-  if (!data.contactPhone.trim()) {
-    errors.contactPhone = 'Contact phone number is required';
-  } else if (!validatePhoneNumber(data.contactPhone)) {
+  // Contact phone is optional - only validate if provided
+  if (data.contactPhone && data.contactPhone.trim() && !validatePhoneNumber(data.contactPhone)) {
     errors.contactPhone = 'Please enter a valid Philippine mobile number (e.g., +63 976 125 1205, 0976 125 1205, or 976 125 1205)';
   }
 
