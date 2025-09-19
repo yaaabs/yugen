@@ -18,10 +18,8 @@ import {
 import { ProjectSubmission, ProjectStatus } from '../../types';
 import { 
   getFromLocalStorage, 
-  saveToLocalStorage, 
   formatDate, 
-  getStatusColor, 
-  createNotification 
+  getStatusColor
 } from '../../utils/helpers';
 import { mockProjects, projectStatuses } from '../../data/mockData';
 import usePageTitle from '../../hooks/usePageTitle';
@@ -136,131 +134,40 @@ const AdminPanel: React.FC = () => {
     setFilteredProjects(filtered);
   }, [projects, searchTerm, statusFilter]);
 
-  const updateProjectStatus = (projectId: string, newStatus: ProjectStatus, notes?: string) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === projectId) {
-        const updatedProject = {
-          ...project,
-          status: newStatus,
-          lastUpdated: new Date(),
-          adminNotes: notes || project.adminNotes
-        };
-
-        // Create notification
-        const notification = createNotification(
-          'status_change',
-          projectId,
-          `Project status updated to ${newStatus} for ${project.companyName}`
-        );
-
-        // Log notification
-        console.log('📧 Email notification sent to:', project.contactEmail);
-        console.log('📧 Status change notification:', notification.message);
-        
-        return updatedProject;
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    
-    // Save to localStorage
-    const savedProjects = updatedProjects.filter(p => !mockProjects.some(mp => mp.id === p.id));
-    saveToLocalStorage('projectSubmissions', savedProjects);
-  };
 
   const handleStatusUpdate = async () => {
     if (selectedProject) {
       try {
-        console.log('🔄 Updating project status and notes...');
-        
-        // Try to update with admin_notes first
-        let updatedProject;
-        try {
-          console.log('🔄 Attempting to update with admin_notes...');
-          updatedProject = await projectsHook.update(selectedProject.id, {
-            status: editingStatus,
-            admin_notes: adminNotes || null
-          });
-        } catch (firstError) {
-          console.log('⚠️ Failed to update with admin_notes, trying status only...', firstError);
-          
-          // Fallback: Update only status (for when admin_notes column doesn't exist)
-          try {
-            updatedProject = await projectsHook.update(selectedProject.id, {
-              status: editingStatus
-            });
-            console.log('✅ Successfully updated status only');
-          } catch (secondError) {
-            throw new Error(`Failed to update project: ${secondError instanceof Error ? secondError.message : 'Unknown error'}`);
-          }
+        console.log('🔄 Updating project status and notes in Supabase...');
+        // Only send status and admin_notes fields
+        const updateFields: any = { status: editingStatus };
+        if (typeof adminNotes !== 'undefined') {
+          updateFields.admin_notes = adminNotes;
         }
-
+        let updatedProject = await projectsHook.update(selectedProject.id, updateFields);
         if (updatedProject) {
-          console.log('✅ Project updated in database successfully');
-          
-          // Update local state with database response
-          const updatedProjectUI = {
+          setSelectedProject({
             ...selectedProject,
             status: editingStatus as any,
             adminNotes: adminNotes,
             lastUpdated: new Date()
-          };
-          
-          setSelectedProject(updatedProjectUI);
-          
-          // Update projects list
+          });
           setProjects(prevProjects => 
             prevProjects.map(p => 
               p.id === selectedProject.id 
-                ? updatedProjectUI
+                ? { ...p, status: editingStatus, adminNotes: adminNotes, lastUpdated: new Date() }
                 : p
             )
           );
-          
-          // Also update localStorage for backward compatibility (without triggering toast)
-          const updatedProjects = projects.map(project => {
-            if (project.id === selectedProject.id) {
-              return {
-                ...project,
-                status: editingStatus,
-                lastUpdated: new Date(),
-                adminNotes: adminNotes || project.adminNotes
-              };
-            }
-            return project;
-          });
-          
-          // Save to localStorage without the toast notification
-          const savedProjects = updatedProjects.filter(p => !mockProjects.some(mp => mp.id === p.id));
-          saveToLocalStorage('projectSubmissions', savedProjects);
-          
-          // Create notification for logging
-          const notification = createNotification(
-            'status_change',
-            selectedProject.id,
-            `Project status updated to ${editingStatus} for ${selectedProject.companyName}`
-          );
-          console.log('📧 Email notification sent to:', selectedProject.contactEmail);
-          console.log('📧 Status change notification:', notification.message);
-          
-          toast.success(`Project status updated to "${editingStatus}"`);
-          setIsEditing(false);
+          toast.success(`Project status updated to \"${editingStatus}\"`);
+          console.log('✅ Project status updated in Supabase and UI.');
         } else {
           throw new Error('Failed to update project in database');
         }
+        setIsEditing(false);
       } catch (error) {
         console.error('❌ Error updating project:', error);
         toast.error('Failed to update project. Please try again.');
-        
-        // Fallback to localStorage update
-        updateProjectStatus(selectedProject.id, editingStatus, adminNotes);
-        setSelectedProject({
-          ...selectedProject,
-          status: editingStatus as any,
-          adminNotes: adminNotes,
-          lastUpdated: new Date()
-        });
         setIsEditing(false);
       }
     }
@@ -347,9 +254,10 @@ const AdminPanel: React.FC = () => {
             {isEditing ? (
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <select
-                  value={editingStatus}
-                  onChange={(e) => setEditingStatus(e.target.value as ProjectStatus)}
-                  className="input-field w-full sm:w-48 text-sm sm:text-base"
+                    value={editingStatus}
+                    onChange={(e) => setEditingStatus(e.target.value as ProjectStatus)}
+                    className="input-field min-w-[220px] whitespace-normal"
+                    style={{ minWidth: '220px', whiteSpace: 'normal' }}
                 >
                   {projectStatuses.map(status => (
                     <option key={status} value={status}>{status}</option>
@@ -452,6 +360,11 @@ const AdminPanel: React.FC = () => {
   const handleLogout = () => {
     toast.success('Logged out successfully');
     logout();
+  };
+
+  const handleEditProject = (project: ProjectSubmission) => {
+    setSelectedProject(project);
+    setEditingStatus('Submitted'); // Adjusted to match the expected ProjectStatus type
   };
 
   return (
@@ -648,13 +561,22 @@ const AdminPanel: React.FC = () => {
                           <span className="text-sm text-gray-900">{project.budgetRange}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => setSelectedProject(project)}
-                            className="inline-flex items-center p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex justify-center space-x-2">
+                            <button
+                              onClick={() => setSelectedProject(project)}
+                              className="inline-flex items-center p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEditProject(project)}
+                              className="inline-flex items-center p-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
+                              title="Edit Project"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

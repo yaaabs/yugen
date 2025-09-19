@@ -1,19 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { ProjectSubmission } from '../../types';
-import { getFromLocalStorage, formatDate, getStatusColor, getStatusProgress } from '../../utils/helpers';
-import { mockProjects } from '../../data/mockData';
-import usePageTitle from '../../hooks/usePageTitle';
+import { formatDate, getStatusColor, getStatusProgress } from '../../utils/helpers';
 import { ProjectListSkeleton } from '../UI/Skeleton';
-import useSupabase from '../../hooks/useSupabase';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { supabase } from '../../lib/supabase';
 
-const StatusTracker: React.FC = () => {
-  // Set dynamic page title
-  usePageTitle('Track Project', 'Monitor Your Project Progress');
-  
-  // Database hook
-  const { projects: projectsHook } = useSupabase();
-  
+export const StatusTracker: React.FC = () => {
+  const { user } = useClientAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [projects, setProjects] = useState<ProjectSubmission[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectSubmission | null>(null);
@@ -21,117 +16,94 @@ const StatusTracker: React.FC = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
-      console.log('🔍 StatusTracker: Loading projects from database...');
       setIsLoading(true);
-      
       try {
-        // Load projects from database
-        const dbProjects = await projectsHook.getAll();
-        console.log('🔍 StatusTracker: Loaded', dbProjects?.length || 0, 'projects from database');
-        
-        if (Array.isArray(dbProjects)) {
-          // Convert database format to UI format
-          const convertedProjects: ProjectSubmission[] = dbProjects.map(dbProject => ({
-            id: dbProject.id,
-            companyName: dbProject.company_name,
-            contactEmail: dbProject.contact_email,
-            contactPhone: dbProject.contact_phone || undefined,
-            projectType: dbProject.project_type as any,
-            description: dbProject.description,
-            timeline: dbProject.timeline,
-            budgetRange: dbProject.budget_range as any,
-            files: [], // TODO: Handle files properly
-            status: dbProject.status as any,
-            adminNotes: dbProject.admin_notes || undefined,
-            submittedAt: new Date(dbProject.created_at),
-            lastUpdated: new Date(dbProject.updated_at)
-          }));
-
-          // Also load from localStorage for backward compatibility
-          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
-          
-          // Combine database projects with localStorage projects (avoiding duplicates)
-          const allProjects = [...convertedProjects];
-          savedProjects.forEach(savedProject => {
-            if (!allProjects.find(p => p.id === savedProject.id)) {
-              allProjects.push(savedProject);
-            }
-          });
-
-          console.log('🔍 StatusTracker: Total projects:', allProjects.length);
-          setProjects(allProjects);
-        } else {
-          console.error('🔍 StatusTracker: Expected array but got:', typeof dbProjects);
-          // Fallback to localStorage and mock data
-          const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
-          const fallbackProjects = [...mockProjects, ...savedProjects];
-          setProjects(fallbackProjects);
+        if (!user || !user.id) {
+          setProjects([]);
+          setIsLoading(false);
+          return;
         }
+  // supabase is now imported at the top
+        const { data, error } = await supabase
+          .from('dph_projects')
+          .select('*')
+          .eq('client_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) {
+          setProjects([]);
+          setIsLoading(false);
+          return;
+        }
+        const convertedProjects: ProjectSubmission[] = (data || []).map((dbProject: any) => ({
+          id: dbProject.id,
+          companyName: dbProject.company_name,
+          contactEmail: dbProject.contact_email,
+          contactPhone: dbProject.contact_phone || undefined,
+          projectType: dbProject.project_type as any,
+          description: dbProject.description,
+          timeline: dbProject.timeline,
+          budgetRange: dbProject.budget_range as any,
+          files: [], // TODO: Handle files properly
+          status: dbProject.status as any,
+          adminNotes: dbProject.admin_notes || undefined,
+          submittedAt: new Date(dbProject.created_at),
+          lastUpdated: new Date(dbProject.updated_at)
+        }));
+        setProjects(convertedProjects);
       } catch (error) {
-        console.error('🔍 StatusTracker: Error loading projects:', error);
-        // Fallback to localStorage and mock data
-        const savedProjects = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
-        const fallbackProjects = [...mockProjects, ...savedProjects];
-        setProjects(fallbackProjects);
+        setProjects([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadProjects();
-  }, []); // Remove the problematic dependencies that cause infinite loop
+  }, [user]);
 
   const filteredProjects = projects.filter(project =>
     project.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.contactEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.id.toLowerCase().includes(searchTerm.toLowerCase())
+    project.id.toString().includes(searchTerm)
   );
 
-  const getStatusIcon = (status: ProjectSubmission['status']) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'Pending':
+        return <Clock className="inline-block w-4 h-4 text-yellow-500" />;
       case 'Completed':
-        return <CheckCircle className="w-5 h-5 text-primary-600" />;
-      case 'In Progress':
-        return <Clock className="w-5 h-5 text-blue-600 animate-spin" />;
-      case 'Pending Client Feedback':
-        return <AlertCircle className="w-5 h-5 text-orange-600" />;
+        return <CheckCircle className="inline-block w-4 h-4 text-green-500" />;
+      case 'Error':
+        return <AlertCircle className="inline-block w-4 h-4 text-red-500" />;
       default:
-        return <FileText className="w-5 h-5 text-gray-600" />;
+        return <Clock className="inline-block w-4 h-4 text-gray-400" />;
     }
   };
 
   const renderProjectCard = (project: ProjectSubmission) => (
     <div
       key={project.id}
-      className="card hover:shadow-md transition-shadow cursor-pointer"
+      className="card cursor-pointer hover:shadow-lg transition-shadow"
       onClick={() => setSelectedProject(project)}
     >
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight line-clamp-2 mb-1" title={project.companyName}>
-            {project.companyName}
-          </h3>
-          <p className="text-sm text-gray-600 truncate mb-1" title={project.contactEmail}>
-            {project.contactEmail}
-          </p>
-          <p className="text-xs text-gray-500">Project ID: {project.id}</p>
-        </div>
-        <div className={`status-badge ${getStatusColor(project.status)} self-start`}>
-          {project.status}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+          <div className={`status-badge ${getStatusColor(project.status)} text-xs px-2 py-1 rounded flex items-center w-fit max-w-full`}>
+            {getStatusIcon(project.status)}
+            <span className="ml-1 break-words">{project.status}</span>
+          </div>
+          <span className="text-xs text-gray-500 mt-1 sm:ml-4 sm:mt-0 break-all">ID: {project.id}</span>
         </div>
       </div>
-
+      <h2 className="font-semibold text-lg text-gray-900 mb-1">{project.companyName}</h2>
+      <p className="text-sm text-gray-600 mb-2">{project.contactEmail}</p>
       <div className="space-y-3">
         <div>
           <p className="text-sm font-medium text-gray-700">Project Type</p>
           <p className="text-sm text-gray-600">{project.projectType}</p>
         </div>
-
         <div>
           <p className="text-sm font-medium text-gray-700">Timeline</p>
           <p className="text-sm text-gray-600">{project.timeline}</p>
         </div>
-
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Progress</p>
           <div className="progress-bar h-2">
@@ -142,7 +114,6 @@ const StatusTracker: React.FC = () => {
           </div>
           <p className="text-xs text-gray-500 mt-1">{getStatusProgress(project.status)}% Complete</p>
         </div>
-
         <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
           <span>Submitted: {formatDate(project.submittedAt).split(',')[0]}</span>
           <span>Updated: {formatDate(project.lastUpdated).split(',')[0]}</span>
@@ -165,13 +136,11 @@ const StatusTracker: React.FC = () => {
           <span className="ml-2">{project.status}</span>
         </div>
       </div>
-
       <div className="card">
         <div className="border-b border-gray-200 pb-6 mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.companyName}</h1>
           <p className="text-gray-600">Project ID: {project.id}</p>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -183,7 +152,6 @@ const StatusTracker: React.FC = () => {
                 )}
               </div>
             </div>
-
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Project Details</h3>
               <div className="space-y-1 text-sm">
@@ -193,7 +161,6 @@ const StatusTracker: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Timeline</h3>
@@ -205,7 +172,6 @@ const StatusTracker: React.FC = () => {
                 )}
               </div>
             </div>
-
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Progress</h3>
               <div className="progress-bar h-3 mb-2">
@@ -218,12 +184,10 @@ const StatusTracker: React.FC = () => {
             </div>
           </div>
         </div>
-
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="font-semibold text-gray-900 mb-3">Project Description</h3>
           <p className="text-gray-700 leading-relaxed">{project.description}</p>
         </div>
-
         {project.files.length > 0 && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-3">Attached Files</h3>
@@ -242,7 +206,6 @@ const StatusTracker: React.FC = () => {
             </div>
           </div>
         )}
-
         {project.adminNotes && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-3">Project Notes</h3>
@@ -269,7 +232,6 @@ const StatusTracker: React.FC = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Track Your Project</h1>
         <p className="text-gray-600">Monitor the progress of your sustainability projects</p>
       </div>
-
       <div className="card">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -282,7 +244,6 @@ const StatusTracker: React.FC = () => {
           />
         </div>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {isLoading ? (
           <div className="col-span-full">
@@ -294,15 +255,10 @@ const StatusTracker: React.FC = () => {
           <div className="col-span-full text-center py-12">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Projects Found</h3>
-            <p className="text-gray-500">
-              {searchTerm 
-                ? 'No projects match your search criteria.' 
-                : 'No projects have been submitted yet.'}
-            </p>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="btn-primary mt-4"
+                className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
               >
                 Clear Search
               </button>
@@ -310,14 +266,6 @@ const StatusTracker: React.FC = () => {
           </div>
         )}
       </div>
-
-      {filteredProjects.length > 0 && (
-        <div className="text-center text-sm text-gray-500">
-          Showing {filteredProjects.length} of {projects.length} projects
-        </div>
-      )}
     </div>
   );
 };
-
-export default StatusTracker;

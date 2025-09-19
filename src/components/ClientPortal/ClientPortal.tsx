@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { toast } from 'react-hot-toast';
 import { Send, FileText, Clock, DollarSign, Building2 } from 'lucide-react';
 import { FormData, FormErrors, ProjectSubmission, FileAttachment } from '../../types';
@@ -14,11 +15,18 @@ import useSupabase from '../../hooks/useSupabase';
 import { useNavigate } from 'react-router-dom';
 
 const ClientPortal: React.FC = () => {
+  // Require client authentication
+  const { isAuthenticated, user } = useClientAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/client/login');
+    }
+  }, [isAuthenticated, navigate]);
   // Set dynamic page title
   usePageTitle('Submit Project', 'Start Your Sustainability Journey');
   
   // Navigation and database hooks
-  const navigate = useNavigate();
   const { projects: projectsHook, error: dbError } = useSupabase();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -138,20 +146,21 @@ const ClientPortal: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error('You must be logged in to submit a project.');
+      navigate('/client/login');
+      return;
+    }
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      // Go back to first step with errors
       setCurrentStep(1);
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       console.log('🚀 Submitting project to database...');
-
-      // Create project data for database (using snake_case fields)
+      // Attach client user id to project
       const projectData = {
         company_name: formData.companyName.trim(),
         contact_email: formData.contactEmail.trim(),
@@ -160,22 +169,16 @@ const ClientPortal: React.FC = () => {
         description: formData.description.trim(),
         timeline: formData.timeline,
         budget_range: formData.budgetRange,
-        status: 'Submitted'
+        status: 'Submitted',
+        client_id: user.id
       };
-
       console.log('📋 Project data being sent:', projectData);
-
-      // Save to database
       const savedProject = await projectsHook.create(projectData);
-      
       if (!savedProject) {
         console.error('❌ Failed to save project. Database error:', dbError);
         throw new Error(dbError || 'Failed to save project to database');
       }
-
       console.log('✅ Project saved successfully:', savedProject.id);
-
-      // Also save to localStorage as backup (for backward compatibility)
       const submission: ProjectSubmission = {
         id: savedProject.id,
         companyName: formData.companyName,
@@ -190,20 +193,12 @@ const ClientPortal: React.FC = () => {
         submittedAt: new Date(savedProject.created_at),
         lastUpdated: new Date(savedProject.updated_at)
       };
-      
       const existingSubmissions = getFromLocalStorage<ProjectSubmission[]>('projectSubmissions') || [];
       saveToLocalStorage('projectSubmissions', [...existingSubmissions, submission]);
-
-      // Clear form data
       localStorage.removeItem('clientPortalForm');
-      
-      // Show success animation
       setShowSuccessAnimation(true);
-      
       console.log('📧 Email notification sent to:', formData.contactEmail);
       console.log('📧 Internal notification: New project submission from', formData.companyName);
-
-      // Reset form and redirect to track page after animation (longer duration for better readability)
       setTimeout(() => {
         setFormData({
           companyName: '',
@@ -217,22 +212,15 @@ const ClientPortal: React.FC = () => {
         });
         setCurrentStep(1);
         setShowSuccessAnimation(false);
-        
-        // Redirect to track page
         console.log('🔄 Redirecting to track page...');
         navigate('/track');
-      }, 7000); // Extended to 7 seconds for comfortable reading
-
+      }, 7000);
     } catch (error) {
       console.error('❌ Submission error details:', error);
       console.error('❌ Form data at time of error:', formData);
       console.error('❌ Database error:', dbError);
-      
-      // Show more specific error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to submit project: ${errorMessage}`);
-      
-      // Reset to step 1 so user can try again
       setCurrentStep(1);
     } finally {
       setIsSubmitting(false);

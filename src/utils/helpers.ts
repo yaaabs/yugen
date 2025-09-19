@@ -2,37 +2,37 @@ import { FormData, FormErrors, ProjectSubmission, NotificationEvent } from '../t
 
 export const validateEmail = (email: string): boolean => {
   const trimmedEmail = email.trim().toLowerCase();
-  
+
   // Basic format validation
   const basicRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!basicRegex.test(trimmedEmail)) {
     return false;
   }
-  
+
   // Block common typos and invalid TLDs
   const invalidTLDs = [
-    'cum', 'con', 'coom', 'cmo', 'cim', 'cpm', 'ocm', 'vom',  // gmail.com typos
-    'cpm', 'cm', 'co', 'c', 'om', 'comm', 'coml',             // .com variations
-    'nit', 'nte', 'ner', 'net', 'ne',                          // .net typos  
-    'orgm', 'ogr', 'org', 'or',                                // .org typos
-    'phm', 'ph', 'phl'                                         // .ph typos
+    'cum', 'con', 'coom', 'cmo', 'cim', 'cpm', 'ocm', 'vom',
+    'cpm', 'cm', 'co', 'c', 'om', 'comm', 'coml',
+    'nit', 'nte', 'ner', 'ne',
+    'orgm', 'ogr', 'or',
+    'phm', 'phl'
   ];
-  
+
   const domain = trimmedEmail.split('@')[1];
   const tld = domain.split('.').pop();
-  
+
   // Reject if TLD is in our blacklist
   if (tld && invalidTLDs.includes(tld)) {
     return false;
   }
-  
+
   // Additional check for proper TLD format (must be valid)
   const validTLDs = [
     'com', 'net', 'org', 'edu', 'gov', 'mil', 'int',
     'ph', 'co.uk', 'co.ph', 'gov.ph', 'org.ph', 'net.ph', 'edu.ph',
-    'io', 'ly', 'me', 'tv', 'cc', 'ws', 'biz', 'info', 'name'
+    'io', 'ly', 'me', 'tv', 'cc', 'ws', 'biz', 'info', 'name', 'tech', 'app'
   ];
-  
+
   return tld ? validTLDs.some(validTLD => domain.endsWith('.' + validTLD)) : false;
 };
 

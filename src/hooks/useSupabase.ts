@@ -12,6 +12,7 @@ interface DphProject {
   timeline: string;
   budget_range: string;
   status: string;
+  client_id: string | null;
   admin_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -26,6 +27,7 @@ interface DphProjectInsert {
   timeline: string;
   budget_range: string;
   status?: string;
+  client_id?: string | null;
 }
 
 interface DphProjectUpdate {
@@ -37,6 +39,7 @@ interface DphProjectUpdate {
   timeline?: string;
   budget_range?: string;
   status?: string;
+  client_id?: string | null;
   admin_notes?: string | null;
 }
 

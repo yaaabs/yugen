@@ -16,6 +16,7 @@ export interface Database {
           timeline: string;
           budget_range: string;
           status: string;
+          client_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -29,6 +30,7 @@ export interface Database {
           timeline: string;
           budget_range: string;
           status?: string;
+          client_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -42,6 +44,7 @@ export interface Database {
           timeline?: string;
           budget_range?: string;
           status?: string;
+          client_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
