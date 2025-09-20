@@ -289,12 +289,18 @@ export const useSupabase = () => {
     }, []),
   };
 
-  // Statistics and Analytics
-  const analytics = {
-    // Get project statistics
-    getStats: useCallback(async () => {
-      setLoading(true);
-      setError(null);
+// Statistics and Analytics
+const analytics = {
+  // Get project statistics
+  getStats: useCallback(async (): Promise<{
+    total: number;
+    submitted: number;
+    inProgress: number;
+    completed: number;
+    thisMonth: number;
+  } | null> => {  // <-- NEW LINE WITH RETURN TYPE
+    setLoading(true);
+    setError(null);
       
       try {
         const { data, error: dbError } = await supabase
@@ -306,18 +312,19 @@ export const useSupabase = () => {
           return null;
         }
 
-        const stats = {
-          total: data?.length || 0,
-          submitted: data?.filter(p => p.status === 'Submitted').length || 0,
-          inProgress: data?.filter(p => p.status === 'In Progress').length || 0,
-          completed: data?.filter(p => p.status === 'Completed').length || 0,
-          thisMonth: data?.filter(p => {
-            const projectDate = new Date(p.created_at);
-            const now = new Date();
-            return projectDate.getMonth() === now.getMonth() && 
-                   projectDate.getFullYear() === now.getFullYear();
-          }).length || 0,
-        };
+const stats = {
+  total: data?.length || 0,
+  submitted: data?.filter((p: { status: string }) => p.status === 'Submitted').length || 0,
+  inProgress: data?.filter((p: { status: string }) => p.status === 'In Progress').length || 0,  
+  completed: data?.filter((p: { status: string }) => p.status === 'Completed').length || 0,
+  thisMonth: data?.filter((p: { status: string; created_at: string }) => {
+    if (!p.created_at) return false;
+    const projectDate = new Date(p.created_at);
+    const now = new Date();
+    return projectDate.getMonth() === now.getMonth() && 
+           projectDate.getFullYear() === now.getFullYear();
+  }).length || 0,
+};
 
         return stats;
       } catch (err) {
