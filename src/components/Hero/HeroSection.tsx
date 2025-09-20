@@ -160,15 +160,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 />
               ))}
               
-              {/* Mobile Responsive Achievement Card - Now inline */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 mt-4">
+              {/* Mobile Responsive Achievement Card - Now with animation */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 mt-4 animate-float hover-lift transition-all mobile-animate-standout">
                 <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-[#1A66FF] to-[#77C624] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-[#1A66FF] to-[#77C624] rounded-xl flex items-center justify-center flex-shrink-0 animate-gradient">
                     <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
                     <div className="text-xl sm:text-2xl font-bold text-gray-900">100%</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Mobile Responsive</div>
+                    <div className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
+                      <span>Mobile Responsive</span>
+                    </div>
                   </div>
                 </div>
               </div>
