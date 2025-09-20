@@ -363,8 +363,11 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleEditProject = (project: ProjectSubmission) => {
+    // Open the project in the detail view and enable edit mode immediately
     setSelectedProject(project);
-    setEditingStatus('Submitted'); // Adjusted to match the expected ProjectStatus type
+    setIsEditing(true);
+    setEditingStatus(project.status);
+    setAdminNotes(project.adminNotes || '');
   };
 
   return (

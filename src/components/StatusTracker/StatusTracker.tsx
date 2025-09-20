@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { ProjectSubmission } from '../../types';
@@ -13,6 +12,23 @@ export const StatusTracker: React.FC = () => {
   const [projects, setProjects] = useState<ProjectSubmission[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectSubmission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper: produce long ("September 20") and short ("Sep 20") date strings.
+  // Return a simple placeholder '-' when the date is missing to avoid showing current date.
+  const toDateObj = (d: Date | string | undefined): Date | null => {
+    if (!d) return null;
+    return d instanceof Date ? d : new Date(d);
+  };
+  const formatDateLongMonth = (d: Date | string | undefined) => {
+    const dt = toDateObj(d);
+    if (!dt || Number.isNaN(dt.getTime())) return '-';
+    return dt.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  };
+  const formatDateShortMonth = (d: Date | string | undefined) => {
+    const dt = toDateObj(d);
+    if (!dt || Number.isNaN(dt.getTime())) return '-';
+    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -115,8 +131,16 @@ export const StatusTracker: React.FC = () => {
           <p className="text-xs text-gray-500 mt-1">{getStatusProgress(project.status)}% Complete</p>
         </div>
         <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-          <span>Submitted: {formatDate(project.submittedAt).split(',')[0]}</span>
-          <span>Updated: {formatDate(project.lastUpdated).split(',')[0]}</span>
+          <span>
+            Submitted:{' '}
+            <span className="hidden sm:inline">{formatDateLongMonth(project.submittedAt)}</span>
+            <span className="inline sm:hidden">{formatDateShortMonth(project.submittedAt)}</span>
+          </span>
+          <span>
+            Updated:{' '}
+            <span className="hidden sm:inline">{formatDateLongMonth(project.lastUpdated)}</span>
+            <span className="inline sm:hidden">{formatDateShortMonth(project.lastUpdated)}</span>
+          </span>
         </div>
       </div>
     </div>
