@@ -22,7 +22,6 @@ const AdminLogin: React.FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
 
   // Clear error when component mounts or form changes
   useEffect(() => {
@@ -79,7 +78,6 @@ const AdminLogin: React.FC = () => {
       email: DEMO_ADMIN_CREDENTIALS.email,
       password: DEMO_ADMIN_CREDENTIALS.password
     });
-    setShowDemoCredentials(false);
   };
 
   const isFormValid = formData.email.trim() && formData.password.length >= 6;
@@ -162,40 +160,40 @@ const AdminLogin: React.FC = () => {
               </div>
             )}
 
-            {/* Demo Credentials Helper */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-2">
-                <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            {/* Demo Credentials Helper - Modern UI */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-blue-600" />
+                  </div>
+                </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-blue-900">Demo Access</h3>
-                  <p className="text-xs text-blue-700 mt-1">
-                    This is a portfolio demo. Use the credentials below to access the admin dashboard.
-                  </p>
-                  {!showDemoCredentials ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowDemoCredentials(true)}
-                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Show demo credentials
-                    </button>
-                  ) : (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs text-blue-800">
-                        <strong>Email:</strong> {DEMO_ADMIN_CREDENTIALS.email}
-                      </p>
-                      <p className="text-xs text-blue-800">
-                        <strong>Password:</strong> {DEMO_ADMIN_CREDENTIALS.password}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={fillDemoCredentials}
-                        className="mt-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      >
-                        Fill credentials
-                      </button>
+                  <h3 className="text-sm font-semibold text-blue-900">Quick Demo Access</h3>
+                  <p className="text-xs text-blue-700 mt-1 mb-3">Click below to instantly fill the admin login form</p>
+
+                  <button
+                    type="button"
+                    onClick={fillDemoCredentials}
+                    className="w-full text-left p-3 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 group-hover:text-blue-900">
+                          Admin Account
+                        </div>
+                        <div className="text-xs text-gray-500 group-hover:text-blue-700">
+                          {DEMO_ADMIN_CREDENTIALS.email}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Use Account
+                        </span>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-blue-600 transition-colors"></div>
+                      </div>
                     </div>
-                  )}
+                  </button>
                 </div>
               </div>
             </div>

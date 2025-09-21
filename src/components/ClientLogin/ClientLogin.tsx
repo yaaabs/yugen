@@ -17,7 +17,6 @@ const ClientLogin: React.FC = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
 
   useEffect(() => { clearError(); }, [clearError]);
   useEffect(() => { if (formData.email || formData.password) clearError(); }, [formData.email, formData.password, clearError]);
@@ -53,7 +52,6 @@ const ClientLogin: React.FC = () => {
       email: DEMO_CLIENT_CREDENTIALS[index].email,
       password: DEMO_CLIENT_CREDENTIALS[index].password
     });
-    setShowDemoCredentials(false);
   };
 
   const isFormValid = formData.email.trim() && formData.password.length >= 6;
@@ -128,26 +126,45 @@ const ClientLogin: React.FC = () => {
               </div>
             )}
 
-            {/* Demo Credentials Helper */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-2">
-                <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            {/* Demo Credentials Helper - Modern UI */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-blue-600" />
+                  </div>
+                </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-blue-900">Demo Access</h3>
-                  <p className="text-xs text-blue-700 mt-1">Use the credentials below to access the client dashboard.</p>
-                  {!showDemoCredentials ? (
-                    <button type="button" onClick={() => setShowDemoCredentials(true)} className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Show demo credentials</button>
-                  ) : (
-                    <div className="mt-2 space-y-1">
-                      {DEMO_CLIENT_CREDENTIALS.map((cred, idx) => (
-                        <div key={cred.email} className="mb-2">
-                          <p className="text-xs text-blue-800"><strong>Email:</strong> {cred.email}</p>
-                          <p className="text-xs text-blue-800"><strong>Password:</strong> {cred.password}</p>
-                          <button type="button" onClick={() => fillDemoCredentials(idx)} className="mt-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">Fill credentials</button>
+                  <h3 className="text-sm font-semibold text-blue-900">Quick Demo Access</h3>
+                  <p className="text-xs text-blue-700 mt-1 mb-3">Choose an account to instantly fill the login form</p>
+
+                  <div className="grid gap-2">
+                    {DEMO_CLIENT_CREDENTIALS.map((cred, idx) => (
+                      <button
+                        key={cred.email}
+                        type="button"
+                        onClick={() => fillDemoCredentials(idx)}
+                        className="w-full text-left p-3 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-900">
+                              Client Account {idx + 1}
+                            </div>
+                            <div className="text-xs text-gray-500 group-hover:text-blue-700">
+                              {cred.email}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                              Use Account
+                            </span>
+                            <div className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-blue-600 transition-colors"></div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
