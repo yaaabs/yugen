@@ -6,11 +6,15 @@ import CTAButton from './CTAButton';
 interface HeroSectionProps {
   onNavigateToPortal: () => void;
   onViewDocumentation: () => void;
+  onNavigateToAdmin: () => void;
+  onNavigateToTracker: () => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigateToPortal,
-  onViewDocumentation
+  onViewDocumentation,
+  onNavigateToAdmin,
+  onNavigateToTracker
 }) => {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   
@@ -150,15 +154,27 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Right Column - Feature Cards */}
           <div className="relative order-1 lg:order-2">
             <div className="grid gap-4 sm:gap-6 space-y-2 sm:space-y-4">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={index}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                  delay={index * 200}
-                />
-              ))}
+              {features.map((feature, index) => {
+                let onClick;
+                if (feature.title === "Multi-Step Forms") {
+                  onClick = onNavigateToPortal;
+                } else if (feature.title === "Project Tracking") {
+                  onClick = onNavigateToTracker;
+                } else if (feature.title === "Admin Dashboard") {
+                  onClick = onNavigateToAdmin;
+                }
+                
+                return (
+                  <FeatureCard
+                    key={index}
+                    icon={feature.icon}
+                    title={feature.title}
+                    description={feature.description}
+                    delay={index * 200}
+                    onClick={onClick}
+                  />
+                );
+              })}
               
               {/* Mobile Responsive Achievement Card - Now with animation */}
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 mt-4 animate-float hover-lift transition-all mobile-animate-standout">

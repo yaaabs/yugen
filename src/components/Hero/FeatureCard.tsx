@@ -6,18 +6,21 @@ interface FeatureCardProps {
   title: string;
   description: string;
   delay?: number;
+  onClick?: () => void;
 }
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ 
   icon: Icon, 
   title, 
   description, 
-  delay = 0 
+  delay = 0,
+  onClick
 }) => {
   return (
     <div 
-      className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl hover:border-[#1A66FF]/30 transition-all duration-300 hover:-translate-y-1"
+      className={`group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl hover:border-[#1A66FF]/30 transition-all duration-300 hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ animationDelay: `${delay}ms` }}
+      onClick={onClick}
     >
       <div className="flex items-start space-x-4">
         <div className="flex-shrink-0">

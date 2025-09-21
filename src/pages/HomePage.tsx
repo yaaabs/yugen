@@ -18,6 +18,10 @@ const HomePage: React.FC = () => {
     window.open('https://github.com/yaaabs/yugen#readme', '_blank');
   };
 
+  const handleNavigateToAdmin = () => {
+    navigate('/admin');
+  };
+
   const handleViewGitHub = () => {
     window.open('https://github.com/yaaabs/yugen', '_blank');
   };
@@ -34,6 +38,8 @@ const HomePage: React.FC = () => {
         <HeroSection 
           onNavigateToPortal={handleNavigateToPortal}
           onViewDocumentation={handleViewDocumentation}
+          onNavigateToAdmin={handleNavigateToAdmin}
+          onNavigateToTracker={handleNavigateToTracker}
         />
       </main>
     </div>
