@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /**
  * Custom hook to dynamically update page titles with Drink PH branding
@@ -7,16 +7,16 @@ import { useEffect } from 'react';
  */
 export const usePageTitle = (title: string, subtitle?: string) => {
   useEffect(() => {
-    const baseTitle = 'Drink PH';
-    const fullTitle = subtitle 
+    const baseTitle = "Drink PH";
+    const fullTitle = subtitle
       ? `${baseTitle} - ${title} | ${subtitle}`
       : `${baseTitle} - ${title}`;
-    
+
     document.title = fullTitle;
-    
+
     // Cleanup: reset to default title on unmount
     return () => {
-      document.title = 'Drink PH - Sustainability Communications';
+      document.title = "Drink PH - Sustainability Communications";
     };
   }, [title, subtitle]);
 };

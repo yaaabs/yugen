@@ -41,22 +41,22 @@ export interface ClientAuthContextType extends ClientAuthState {
 // Demo credentials for portfolio/development
 export const DEMO_CLIENT_CREDENTIALS = [
   {
-    email: 'client1@drinkph-demo.com',
-    username: 'client_demo1',
-    password: 'ClientDemo2025!',
-    full_name: 'Demo Client One'
+    email: "client1@drinkph-demo.com",
+    username: "client_demo1",
+    password: "ClientDemo2025!",
+    full_name: "Demo Client One",
   },
   {
-    email: 'client2@drinkph-demo.com',
-    username: 'client_demo2',
-    password: 'ClientDemo2025!',
-    full_name: 'Demo Client Two'
-  }
+    email: "client2@drinkph-demo.com",
+    username: "client_demo2",
+    password: "ClientDemo2025!",
+    full_name: "Demo Client Two",
+  },
 ] as const;
 
-export type ClientAuthAction = 
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_USER'; payload: ClientUser | null }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'LOGOUT' };
+export type ClientAuthAction =
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "SET_USER"; payload: ClientUser | null }
+  | { type: "SET_ERROR"; payload: string | null }
+  | { type: "CLEAR_ERROR" }
+  | { type: "LOGOUT" };

@@ -1,24 +1,24 @@
-export type ProjectStatus = 
-  | 'Submitted'
-  | 'Under Review'
-  | 'In Progress'
-  | 'Pending Client Feedback'
-  | 'Completed';
+export type ProjectStatus =
+  | "Submitted"
+  | "Under Review"
+  | "In Progress"
+  | "Pending Client Feedback"
+  | "Completed";
 
-export type ProjectType = 
-  | 'Website Development'
-  | 'Data Integration'
-  | 'Sustainability Dashboard'
-  | 'Custom Solution';
+export type ProjectType =
+  | "Website Development"
+  | "Data Integration"
+  | "Sustainability Dashboard"
+  | "Custom Solution";
 
-export type Currency = 'PHP' | 'USD';
+export type Currency = "PHP" | "USD";
 
-export type BudgetRange = 
-  | 'Under ₱50,000'
-  | '₱50,000 - ₱150,000'
-  | '₱150,000 - ₱300,000'
-  | '₱300,000 - ₱500,000'
-  | 'Over ₱500,000';
+export type BudgetRange =
+  | "Under ₱50,000"
+  | "₱50,000 - ₱150,000"
+  | "₱150,000 - ₱300,000"
+  | "₱300,000 - ₱500,000"
+  | "Over ₱500,000";
 
 export interface FileAttachment {
   id: string;
@@ -56,7 +56,7 @@ export interface StatusUpdate {
 }
 
 export interface NotificationEvent {
-  type: 'submission' | 'status_change' | 'file_upload';
+  type: "submission" | "status_change" | "file_upload";
   projectId: string;
   message: string;
   timestamp: Date;
@@ -78,9 +78,9 @@ export interface FormData {
   companyName: string;
   contactEmail: string;
   contactPhone: string;
-  projectType: ProjectType | '';
+  projectType: ProjectType | "";
   description: string;
   timeline: string;
-  budgetRange: BudgetRange | '';
+  budgetRange: BudgetRange | "";
   files: FileAttachment[];
 }

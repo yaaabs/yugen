@@ -3,19 +3,19 @@
  * Wrapper that ensures authentication before allowing access to protected routes
  */
 
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Shield, Loader2 } from 'lucide-react';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { Shield, Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   fallbackPath?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  fallbackPath = '/admin/login' 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  fallbackPath = "/admin/login",
 }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -32,7 +32,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Verifying access...</span>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Please wait while we check your credentials</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Please wait while we check your credentials
+          </p>
         </div>
       </div>
     );
@@ -41,15 +43,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
     // Store the attempted location for redirect after login
-    const redirectTo = location.pathname !== '/admin/login' ? location.pathname : '/admin';
-    
-    return (
-      <Navigate 
-        to={fallbackPath} 
-        state={{ from: redirectTo }} 
-        replace 
-      />
-    );
+    const redirectTo =
+      location.pathname !== "/admin/login" ? location.pathname : "/admin";
+
+    return <Navigate to={fallbackPath} state={{ from: redirectTo }} replace />;
   }
 
   // User is authenticated, render the protected content

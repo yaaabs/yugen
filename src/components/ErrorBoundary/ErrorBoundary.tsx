@@ -1,5 +1,5 @@
-import React, { Component, ErrorInfo } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React, { Component, ErrorInfo } from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -22,7 +22,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
     this.setState({ errorInfo });
   }
 
@@ -31,7 +31,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   };
 
   handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   render() {
@@ -42,18 +42,21 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-red-600" />
             </div>
-            
+
             <h1 className="text-xl font-bold text-gray-900 mb-2">
               Something went wrong
             </h1>
-            
+
             <p className="text-gray-600 mb-6">
-              We encountered an unexpected error. This has been logged and we'll look into it.
+              We encountered an unexpected error. This has been logged and we'll
+              look into it.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
-                <h3 className="text-sm font-medium text-red-800 mb-2">Error Details:</h3>
+                <h3 className="text-sm font-medium text-red-800 mb-2">
+                  Error Details:
+                </h3>
                 <pre className="text-xs text-red-700 overflow-auto max-h-32">
                   {this.state.error.toString()}
                 </pre>
@@ -68,7 +71,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <RefreshCw className="w-4 h-4" />
                 <span>Try Again</span>
               </button>
-              
+
               <button
                 onClick={this.handleGoHome}
                 className="btn-secondary flex items-center justify-center space-x-2"
@@ -77,7 +80,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <span>Go Home</span>
               </button>
             </div>
-            
+
             <p className="text-xs text-gray-500 mt-4">
               If this problem persists, please contact support.
             </p>

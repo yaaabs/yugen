@@ -3,23 +3,28 @@
  * Modern, secure login form for clients (dph_clients)
  */
 
-import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
-import { useClientAuth } from '../../contexts/ClientAuthContext';
-import { DEMO_CLIENT_CREDENTIALS } from '../../types/clientAuth';
-import usePageTitle from '../../hooks/usePageTitle';
+import React, { useState, useEffect } from "react";
+import { Navigate, Link } from "react-router-dom";
+import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { useClientAuth } from "../../contexts/ClientAuthContext";
+import { DEMO_CLIENT_CREDENTIALS } from "../../types/clientAuth";
+import usePageTitle from "../../hooks/usePageTitle";
 
 const ClientLogin: React.FC = () => {
-  usePageTitle('Client Login', 'Access Your DrinkPH Dashboard');
+  usePageTitle("Client Login", "Access Your DrinkPH Dashboard");
 
-  const { login, isAuthenticated, isLoading, error, clearError } = useClientAuth();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const { login, isAuthenticated, isLoading, error, clearError } =
+    useClientAuth();
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => { clearError(); }, [clearError]);
-  useEffect(() => { if (formData.email || formData.password) clearError(); }, [formData.email, formData.password, clearError]);
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+  useEffect(() => {
+    if (formData.email || formData.password) clearError();
+  }, [formData.email, formData.password, clearError]);
 
   if (isAuthenticated) {
     return <Navigate to="/client" replace />;
@@ -27,7 +32,7 @@ const ClientLogin: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,13 +40,16 @@ const ClientLogin: React.FC = () => {
     if (!formData.email || !formData.password) return;
     setIsSubmitting(true);
     try {
-      const result = await login({ email: formData.email.trim().toLowerCase(), password: formData.password });
+      const result = await login({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
       if (result.success) {
         // Navigation handled by Navigate above
-        console.log('🔐 Client login successful, redirecting...');
+        console.log("🔐 Client login successful, redirecting...");
       }
     } catch (error) {
-      console.error('🔐 Client login error:', error);
+      console.error("🔐 Client login error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -50,7 +58,7 @@ const ClientLogin: React.FC = () => {
   const fillDemoCredentials = (index: number) => {
     setFormData({
       email: DEMO_CLIENT_CREDENTIALS[index].email,
-      password: DEMO_CLIENT_CREDENTIALS[index].password
+      password: DEMO_CLIENT_CREDENTIALS[index].password,
     });
   };
 
@@ -64,7 +72,9 @@ const ClientLogin: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Client Login</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Client Login
+          </h1>
           <p className="text-gray-600">Access your DrinkPH client dashboard</p>
         </div>
 
@@ -73,7 +83,12 @@ const ClientLogin: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Email Address
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
@@ -93,7 +108,12 @@ const ClientLogin: React.FC = () => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Password
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
@@ -101,7 +121,7 @@ const ClientLogin: React.FC = () => {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
                   onChange={handleInputChange}
@@ -113,7 +133,11 @@ const ClientLogin: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -135,8 +159,12 @@ const ClientLogin: React.FC = () => {
                   </div>
                 </div>
                 <div className="ml-2.5">
-                  <h3 className="text-sm sm:text-lg font-semibold text-blue-900 leading-tight">Quick Demo Access</h3>
-                  <p className="text-[9px] sm:text-[11px] text-blue-700 leading-tight">Choose an account to instantly fill the login form</p>
+                  <h3 className="text-sm sm:text-lg font-semibold text-blue-900 leading-tight">
+                    Quick Demo Access
+                  </h3>
+                  <p className="text-[9px] sm:text-[11px] text-blue-700 leading-tight">
+                    Choose an account to instantly fill the login form
+                  </p>
                 </div>
               </div>
               <div className="grid gap-2 w-full mt-2">
@@ -148,11 +176,17 @@ const ClientLogin: React.FC = () => {
                     className="w-full flex items-center justify-between p-1 sm:p-2 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-[10px] sm:text-xs font-semibold text-gray-900 group-hover:text-blue-900">Client Account {idx + 1}</span>
-                      <span className="text-[9px] sm:text-[11px] text-blue-700 group-hover:text-blue-800">{cred.email}</span>
+                      <span className="text-[10px] sm:text-xs font-semibold text-gray-900 group-hover:text-blue-900">
+                        Client Account {idx + 1}
+                      </span>
+                      <span className="text-[9px] sm:text-[11px] text-blue-700 group-hover:text-blue-800">
+                        {cred.email}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <span className="text-[9px] sm:text-xs text-blue-400 font-semibold group-hover:text-blue-600">Use Account</span>
+                      <span className="text-[9px] sm:text-xs text-blue-400 font-semibold group-hover:text-blue-600">
+                        Use Account
+                      </span>
                       <div className="w-1 h-1 bg-blue-400 rounded-full group-hover:bg-blue-600 transition-colors"></div>
                     </div>
                   </button>
@@ -172,20 +206,27 @@ const ClientLogin: React.FC = () => {
                   <span>Signing in...</span>
                 </div>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </button>
           </form>
 
           {/* Back to Landing */}
           <div className="mt-6 text-center">
-            <Link to="/" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">← Back to DrinkPH Landing</Link>
+            <Link
+              to="/"
+              className="text-sm text-gray-600 hover:text-primary-600 transition-colors"
+            >
+              ← Back to DrinkPH Landing
+            </Link>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-xs text-gray-500">DrinkPH Client Portal • Secure Access Required</p>
+          <p className="text-xs text-gray-500">
+            DrinkPH Client Portal • Secure Access Required
+          </p>
         </div>
       </div>
     </div>

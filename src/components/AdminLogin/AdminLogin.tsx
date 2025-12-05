@@ -3,22 +3,22 @@
  * Modern, secure login form with validation and beautiful UI
  */
 
-import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { DEMO_ADMIN_CREDENTIALS } from '../../types/auth';
-import usePageTitle from '../../hooks/usePageTitle';
+import React, { useState, useEffect } from "react";
+import { Navigate, Link } from "react-router-dom";
+import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { DEMO_ADMIN_CREDENTIALS } from "../../types/auth";
+import usePageTitle from "../../hooks/usePageTitle";
 
 const AdminLogin: React.FC = () => {
   // Set page title
-  usePageTitle('Admin Login', 'Access DrinkPH Admin Dashboard');
+  usePageTitle("Admin Login", "Access DrinkPH Admin Dashboard");
 
   const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
-  
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,33 +41,33 @@ const AdminLogin: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const result = await login({
         email: formData.email.trim().toLowerCase(),
-        password: formData.password
+        password: formData.password,
       });
 
       if (result.success) {
         // Navigation will be handled by the Navigate component above
-        console.log('🔐 Login successful, redirecting to admin dashboard...');
+        console.log("🔐 Login successful, redirecting to admin dashboard...");
       }
     } catch (error) {
-      console.error('🔐 Login error:', error);
+      console.error("🔐 Login error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -76,7 +76,7 @@ const AdminLogin: React.FC = () => {
   const fillDemoCredentials = () => {
     setFormData({
       email: DEMO_ADMIN_CREDENTIALS.email,
-      password: DEMO_ADMIN_CREDENTIALS.password
+      password: DEMO_ADMIN_CREDENTIALS.password,
     });
   };
 
@@ -99,7 +99,10 @@ const AdminLogin: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -121,7 +124,10 @@ const AdminLogin: React.FC = () => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -131,7 +137,7 @@ const AdminLogin: React.FC = () => {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
                   onChange={handleInputChange}
@@ -169,8 +175,12 @@ const AdminLogin: React.FC = () => {
                   </div>
                 </div>
                 <div className="ml-2.5">
-                  <h3 className="text-sm sm:text-lg font-semibold text-blue-900 leading-tight">Quick Demo Access</h3>
-                  <p className="text-[9px] sm:text-[11px] text-blue-700 leading-tight">Click below to instantly fill the admin login form</p>
+                  <h3 className="text-sm sm:text-lg font-semibold text-blue-900 leading-tight">
+                    Quick Demo Access
+                  </h3>
+                  <p className="text-[9px] sm:text-[11px] text-blue-700 leading-tight">
+                    Click below to instantly fill the admin login form
+                  </p>
                 </div>
               </div>
               <div className="grid gap-2 w-full mt-2">
@@ -180,11 +190,17 @@ const AdminLogin: React.FC = () => {
                   className="w-full flex items-center justify-between p-1 sm:p-2 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-start">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-900 group-hover:text-blue-900">Admin Account</span>
-                    <span className="text-[9px] sm:text-[11px] text-blue-700 group-hover:text-blue-800">{DEMO_ADMIN_CREDENTIALS.email}</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-900 group-hover:text-blue-900">
+                      Admin Account
+                    </span>
+                    <span className="text-[9px] sm:text-[11px] text-blue-700 group-hover:text-blue-800">
+                      {DEMO_ADMIN_CREDENTIALS.email}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <span className="text-[9px] sm:text-xs text-blue-400 font-semibold group-hover:text-blue-600">Use Account</span>
+                    <span className="text-[9px] sm:text-xs text-blue-400 font-semibold group-hover:text-blue-600">
+                      Use Account
+                    </span>
                     <div className="w-1 h-1 bg-blue-400 rounded-full group-hover:bg-blue-600 transition-colors"></div>
                   </div>
                 </button>
@@ -203,7 +219,7 @@ const AdminLogin: React.FC = () => {
                   <span>Signing in...</span>
                 </div>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </button>
           </form>

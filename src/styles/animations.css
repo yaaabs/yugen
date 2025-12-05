@@ -95,7 +95,8 @@
 
 /* Pulse animation for loading states */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -193,7 +194,7 @@
   .form-input:focus {
     transform: none;
   }
-  
+
   .project-card:hover {
     transform: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);

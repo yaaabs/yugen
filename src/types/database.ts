@@ -123,12 +123,18 @@ export interface Database {
 }
 
 // Helper types for easier usage
-export type DphProject = Database['public']['Tables']['dph_projects']['Row'];
-export type DphProjectInsert = Database['public']['Tables']['dph_projects']['Insert'];
-export type DphProjectUpdate = Database['public']['Tables']['dph_projects']['Update'];
+export type DphProject = Database["public"]["Tables"]["dph_projects"]["Row"];
+export type DphProjectInsert =
+  Database["public"]["Tables"]["dph_projects"]["Insert"];
+export type DphProjectUpdate =
+  Database["public"]["Tables"]["dph_projects"]["Update"];
 
-export type DphProjectFile = Database['public']['Tables']['dph_project_files']['Row'];
-export type DphProjectFileInsert = Database['public']['Tables']['dph_project_files']['Insert'];
+export type DphProjectFile =
+  Database["public"]["Tables"]["dph_project_files"]["Row"];
+export type DphProjectFileInsert =
+  Database["public"]["Tables"]["dph_project_files"]["Insert"];
 
-export type DphAdminUser = Database['public']['Tables']['dph_admin_users']['Row'];
-export type DphAdminUserInsert = Database['public']['Tables']['dph_admin_users']['Insert'];
+export type DphAdminUser =
+  Database["public"]["Tables"]["dph_admin_users"]["Row"];
+export type DphAdminUserInsert =
+  Database["public"]["Tables"]["dph_admin_users"]["Insert"];

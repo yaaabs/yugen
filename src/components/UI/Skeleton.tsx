@@ -1,17 +1,17 @@
-import React from 'react';
+import React from "react";
 
 interface SkeletonProps {
   className?: string;
   animate?: boolean;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ 
-  className = '', 
-  animate = true 
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className = "",
+  animate = true,
 }) => {
   return (
-    <div 
-      className={`bg-gray-200 rounded ${animate ? 'animate-pulse' : ''} ${className}`}
+    <div
+      className={`bg-gray-200 rounded ${animate ? "animate-pulse" : ""} ${className}`}
       aria-label="Loading content..."
     />
   );
@@ -48,7 +48,9 @@ export const ProjectCardSkeleton: React.FC = () => {
   );
 };
 
-export const ProjectListSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) => {
+export const ProjectListSkeleton: React.FC<{ count?: number }> = ({
+  count = 3,
+}) => {
   return (
     <div className="space-y-6">
       {Array.from({ length: count }, (_, index) => (
@@ -62,7 +64,10 @@ export const AdminStatsSkeleton: React.FC = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div
+          key={index}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+        >
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <Skeleton className="h-4 w-20" />

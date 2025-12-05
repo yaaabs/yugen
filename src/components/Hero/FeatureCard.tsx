@@ -1,5 +1,5 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import React from "react";
+import { LucideIcon } from "lucide-react";
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -9,16 +9,16 @@ interface FeatureCardProps {
   onClick?: () => void;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ 
-  icon: Icon, 
-  title, 
-  description, 
+const FeatureCard: React.FC<FeatureCardProps> = ({
+  icon: Icon,
+  title,
+  description,
   delay = 0,
-  onClick
+  onClick,
 }) => {
   return (
-    <div 
-      className={`group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl hover:border-[#1A66FF]/30 transition-all duration-300 hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`}
+    <div
+      className={`group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl hover:border-[#1A66FF]/30 transition-all duration-300 hover:-translate-y-1 ${onClick ? "cursor-pointer" : ""}`}
       style={{ animationDelay: `${delay}ms` }}
       onClick={onClick}
     >
@@ -32,12 +32,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
           <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#1A66FF] transition-colors">
             {title}
           </h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            {description}
-          </p>
+          <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
         </div>
       </div>
-      
+
       {/* Subtle hover decoration */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#1A66FF]/5 to-[#77C624]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     </div>

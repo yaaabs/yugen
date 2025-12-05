@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import { ArrowRight, Play, CheckCircle, Sparkles, Globe, Users, X } from 'lucide-react';
-import FeatureCard from './FeatureCard';
-import CTAButton from './CTAButton';
+import React, { useState } from "react";
+import {
+  ArrowRight,
+  Play,
+  CheckCircle,
+  Sparkles,
+  Globe,
+  Users,
+  X,
+} from "lucide-react";
+import FeatureCard from "./FeatureCard";
+import CTAButton from "./CTAButton";
 
 interface HeroSectionProps {
   onNavigateToPortal: () => void;
@@ -14,26 +22,27 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigateToPortal,
   onViewDocumentation,
   onNavigateToAdmin,
-  onNavigateToTracker
+  onNavigateToTracker,
 }) => {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
-  
+
   const features = [
     {
       icon: Globe,
       title: "Multi-Step Forms",
-      description: "Professional submission workflows with real-time validation"
+      description:
+        "Professional submission workflows with real-time validation",
     },
     {
       icon: Users,
       title: "Project Tracking",
-      description: "Real-time status updates and progress monitoring"
+      description: "Real-time status updates and progress monitoring",
     },
     {
       icon: Sparkles,
       title: "Admin Dashboard",
-      description: "Comprehensive project management interface"
-    }
+      description: "Comprehensive project management interface",
+    },
   ];
 
   return (
@@ -54,7 +63,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <div className="flex items-center space-x-2 text-amber-800">
                   <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
                   <span className="text-xs sm:text-sm font-medium text-center">
-                    Portfolio Demo Project • Not Officially Affiliated with Drink PH • Created for Web Developer Application
+                    Portfolio Demo Project • Not Officially Affiliated with
+                    Drink PH • Created for Web Developer Application
                   </span>
                 </div>
               </div>
@@ -84,16 +94,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Headlines */}
             <div className="space-y-4 sm:space-y-6">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Sustainability{' '}
+                Sustainability{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1A66FF] to-[#77C624]">
                   Stories
-                </span>{' '}
+                </span>{" "}
                 That Stand Out
               </h1>
-              
+
               <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                A modern client communication portal demonstration showcasing professional web development capabilities. 
-                Built with React, TypeScript, and modern design principles.
+                A modern client communication portal demonstration showcasing
+                professional web development capabilities. Built with React,
+                TypeScript, and modern design principles.
               </p>
             </div>
 
@@ -101,13 +112,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             <div className="space-y-2 sm:space-y-3">
               {[
                 "Enhanced form validation with real-time feedback",
-                "Mobile-first responsive design implementation", 
+                "Mobile-first responsive design implementation",
                 "Professional admin dashboard interface",
-                "Modern UI/UX with accessibility compliance"
+                "Modern UI/UX with accessibility compliance",
               ].map((feature, index) => (
-                <div key={index} className="flex items-start space-x-3 text-gray-700">
+                <div
+                  key={index}
+                  className="flex items-start space-x-3 text-gray-700"
+                >
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#77C624] flex-shrink-0 mt-0.5" />
-                  <span className="text-sm sm:text-lg leading-relaxed">{feature}</span>
+                  <span className="text-sm sm:text-lg leading-relaxed">
+                    {feature}
+                  </span>
                 </div>
               ))}
             </div>
@@ -123,7 +139,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <span>View Client Portal</span>
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </CTAButton>
-              
+
               <CTAButton
                 variant="secondary"
                 onClick={onViewDocumentation}
@@ -137,9 +153,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
             {/* Tech Stack Badges */}
             <div className="pt-6 sm:pt-8 border-t border-gray-200">
-              <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Built with modern technologies:</p>
+              <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+                Built with modern technologies:
+              </p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
-                {['React 18', 'TypeScript', 'Tailwind CSS', 'Vite', 'React Router'].map((tech) => (
+                {[
+                  "React 18",
+                  "TypeScript",
+                  "Tailwind CSS",
+                  "Vite",
+                  "React Router",
+                ].map((tech) => (
                   <span
                     key={tech}
                     className="inline-flex items-center px-2 sm:px-3 py-1 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 shadow-sm"
@@ -163,7 +187,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 } else if (feature.title === "Admin Dashboard") {
                   onClick = onNavigateToAdmin;
                 }
-                
+
                 return (
                   <FeatureCard
                     key={index}
@@ -175,7 +199,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   />
                 );
               })}
-              
+
               {/* Mobile Responsive Achievement Card - Now with animation */}
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 mt-4 animate-float hover-lift transition-all mobile-animate-standout">
                 <div className="flex items-center space-x-3 sm:space-x-4">
@@ -183,7 +207,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                     <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900">100%</div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                      100%
+                    </div>
                     <div className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
                       <span>Mobile Responsive</span>
                     </div>
